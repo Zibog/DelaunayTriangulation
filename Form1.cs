@@ -50,7 +50,7 @@ namespace DelaunayTriangulation
 			double minDegree = 180;
 			foreach (var p in _points)
 			{
-				var deg = DegreesBetweenEdges(new Edge(firstPoint, new Point(firstPoint.X, firstPoint.Y - 1)), new Edge(firstPoint, p));
+				var deg = FindDegreesBetweenEdges(new Edge(firstPoint, new Point(firstPoint.X, firstPoint.Y - 1)), new Edge(firstPoint, p));
 				if (deg < minDegree)
 				{
 					minDegree = deg;
@@ -93,10 +93,9 @@ namespace DelaunayTriangulation
 				return -1;
 			return 0;
 		}
-
-
+		
 		// Вычисляем угол между двумя ребрами в градусах
-		private double DegreesBetweenEdges(Edge e1, Edge e2)
+		private double FindDegreesBetweenEdges(Edge e1, Edge e2)
 		{
 			var e1X = e1.To.X - e1.From.X;
 			var e1Y = e1.To.Y - e1.From.Y;
@@ -110,6 +109,8 @@ namespace DelaunayTriangulation
 		private void buttonTriangulate_Click(object sender, EventArgs e)
 		{
 			Redraw();
+			if (_points.Count < 3)
+				throw new ArgumentException("Count of points must be at least 3, but was " + _points.Count);
 			Triangulate();
 		}
 
@@ -156,30 +157,30 @@ namespace DelaunayTriangulation
 				
 				int i;
 				var edgeToFind = new Edge(nextEdge[1], nextEdge[0]);
+				// Если вновь найденные рёбра отсутствуют в списке живых, то заносим
+				if ((i = _livingEdges.FindIndex(ee => ee == edgeToFind)) < 0)
+				{
+					_livingEdges.Add(nextEdge);
+				}
 				// Если ребро было живым, то рисуем и удаляем из жижзни
-				if ((i = _livingEdges.FindIndex(ee => ee == edgeToFind)) >= 0)
+				else
 				{
 					DrawEdge(_livingEdges[i]);
 					_livingEdges.RemoveAt(i);
-				}
-				// Если вновь найденные рёбра отсутствуют в списке живых, то заносим
-				else
-				{
-					_livingEdges.Add(nextEdge);
 				}
 
 				// Аналогично проверяем для второй точки грани
 				nextEdge = new Edge(thirdPoint, currentEdge[1]);
 				
 				edgeToFind = new Edge(nextEdge[1], nextEdge[0]);
-				if ((i = _livingEdges.FindIndex(ee => ee == edgeToFind)) >= 0)
+				if ((i = _livingEdges.FindIndex(ee => ee == edgeToFind)) < 0)
 				{
-					DrawEdge(_livingEdges[i]);
-					_livingEdges.RemoveAt(i);
+					_livingEdges.Add(nextEdge);
 				}
 				else
 				{
-					_livingEdges.Add(nextEdge);
+					DrawEdge(_livingEdges[i]);
+					_livingEdges.RemoveAt(i);
 				}
 			}
 		}
